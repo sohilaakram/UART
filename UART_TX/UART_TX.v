@@ -1,18 +1,21 @@
-module UART 
+module UART_TX
 #(parameter DATA_WIDTH=8)
 (
     output  wire                        o_uart,
     output  wire                        o_busy_flag,
     input   wire    [DATA_WIDTH-1:0]    i_data,
+    input   wire                        i_data_valid,
     input   wire                        i_parity_type,
     input   wire                        i_parity_enable,
-    input   wire                        i_data_valid,
-    input   wire                        i_clk,i_rst
+    input   wire                        i_clk,
+    input   wire                        i_rst
 );
 
     wire    load_enable,shift_enable,count_enable;
     wire    overflow,data_out,parity_bit;
     wire    [2:0]   sel;
+
+
 control_unit Control_Unit 
                          (.o_load_enable(load_enable),
                           .o_shift_enable(shift_enable),
@@ -26,17 +29,27 @@ control_unit Control_Unit
                           .i_rst(i_rst)
                          );
 
+
 parity_bit Parity_Bit 
                      (.o_parity_bit(parity_bit),
                       .i_parity_type(i_parity_type),
-                      .i_data(i_data)
+                      .i_parity_enable(i_parity_enable),
+                      .i_data_valid(i_data_valid),
+                      .i_data(i_data),
+                      .i_clk(i_clk),
+                      .i_rst_n(i_rst)
                      );
 
+
 Mux Output_Mux 
-              (.o_uart(o_uart),
+              (.o_uart_tx(o_uart),
                .i_data(data_out),
                .i_parity_bit(parity_bit),
-               .i_sel(sel)
+               .i_start_bit(1'b0),
+               .i_stop_bit(1'b1),
+               .i_sel(sel),
+               .i_clk(i_clk),
+               .i_rst_n(i_rst)
               );
 
 Counter Counter 
@@ -52,7 +65,7 @@ Serializer Serializer
                       .i_load_enable(load_enable),
                       .i_shift_enable(shift_enable),
                       .i_clk(i_clk),
-                      .i_rst(i_rst)
+                      .i_rst_n(i_rst)
                      );
 
 
